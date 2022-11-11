@@ -31,7 +31,7 @@ public class Listener extends FoliageBaseListener {
 		MethodVisitor method;
 		
 		public Operation() {
-			method = cw.visitMethod(Opcodes.ACC_PUBLIC + Opcodes.ACC_STATIC, Integer.toString(operations.size()), "()V", "(I)V", null);
+			method = cw.visitMethod(Opcodes.ACC_PUBLIC + Opcodes.ACC_STATIC, Integer.toString(operations.size()), "()I", null, null);
 		}
     }
 
@@ -80,7 +80,7 @@ public class Listener extends FoliageBaseListener {
 	public void exitProgram(FoliageParser.ProgramContext ctx) {
 		cw.visitEnd();
 		
-		try (FileOutputStream stream = new FileOutputStream("GeneratedClass.class")) {
+		try (FileOutputStream stream = new FileOutputStream("target/foliage/GeneratedClass.class")) {
             stream.write(cw.toByteArray());
         } catch (Exception e) {
             e.printStackTrace();

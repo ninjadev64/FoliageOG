@@ -6,14 +6,12 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
-import org.antlr.v4.runtime.tree.ParseTree;
-import org.antlr.v4.runtime.tree.ParseTreeWalker;
 
-public class Main {
+public class FoliageCompiler {
 	static FoliageParser parser;
-	public static void main(String[] args) {
+	public static void compile(String filename) {
 		try {
-			BufferedReader br = new BufferedReader(new FileReader("main.leaf"));
+			BufferedReader br = new BufferedReader(new FileReader(filename));
     		StringBuilder sb = new StringBuilder();
 		    String line = br.readLine();
 		
