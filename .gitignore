@@ -1,0 +1,11 @@
+target/
+*.class
+
+.settings
+.classpath
+.project
+.breakpoints
+
+.replit
+replit.nix
+.upm/
