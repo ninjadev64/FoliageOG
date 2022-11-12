@@ -29,13 +29,25 @@ public class FoliageBaseListener implements FoliageListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterLine(FoliageParser.LineContext ctx) { }
+	@Override public void enterMethod(FoliageParser.MethodContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitLine(FoliageParser.LineContext ctx) { }
+	@Override public void exitMethod(FoliageParser.MethodContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterStatement(FoliageParser.StatementContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitStatement(FoliageParser.StatementContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
@@ -48,6 +60,18 @@ public class FoliageBaseListener implements FoliageListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitOperation(FoliageParser.OperationContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterReturn(FoliageParser.ReturnContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitReturn(FoliageParser.ReturnContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *

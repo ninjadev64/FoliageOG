@@ -18,15 +18,25 @@ public interface FoliageListener extends ParseTreeListener {
 	 */
 	void exitProgram(FoliageParser.ProgramContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link FoliageParser#line}.
+	 * Enter a parse tree produced by {@link FoliageParser#method}.
 	 * @param ctx the parse tree
 	 */
-	void enterLine(FoliageParser.LineContext ctx);
+	void enterMethod(FoliageParser.MethodContext ctx);
 	/**
-	 * Exit a parse tree produced by {@link FoliageParser#line}.
+	 * Exit a parse tree produced by {@link FoliageParser#method}.
 	 * @param ctx the parse tree
 	 */
-	void exitLine(FoliageParser.LineContext ctx);
+	void exitMethod(FoliageParser.MethodContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link FoliageParser#statement}.
+	 * @param ctx the parse tree
+	 */
+	void enterStatement(FoliageParser.StatementContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link FoliageParser#statement}.
+	 * @param ctx the parse tree
+	 */
+	void exitStatement(FoliageParser.StatementContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link FoliageParser#operation}.
 	 * @param ctx the parse tree
@@ -37,6 +47,16 @@ public interface FoliageListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitOperation(FoliageParser.OperationContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link FoliageParser#return}.
+	 * @param ctx the parse tree
+	 */
+	void enterReturn(FoliageParser.ReturnContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link FoliageParser#return}.
+	 * @param ctx the parse tree
+	 */
+	void exitReturn(FoliageParser.ReturnContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link FoliageParser#operator}.
 	 * @param ctx the parse tree

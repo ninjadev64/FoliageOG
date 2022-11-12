@@ -1,12 +1,18 @@
 grammar Foliage;
 
-program : line+ ;
-line : (operation)? ';' ;
-operation : ((integer operator)+ integer) ;
+program : (method)+ ;
+method : name=string ' '+? '{' statement+ '}' ;
+statement : (operation | return) ';' ;
+operation : (integer operator)+ integer ;
+return : 'return ' value=integer ;
+
 
 operator : ('+' | '-' | '*' | '/') ;
-integer : DIGIT+ ;
-string : (LETTER | DIGIT)+ ;
+integer : Number ;
+string : Text ;
+
+Number : DIGIT+ ;
+Text : LETTER+ ;
 
 fragment
 LETTER : [A-Za-z] ;
