@@ -1,8 +1,8 @@
-foo {
-	5+4+3+7;
+float foo {
+	72.9*63.4-32+24f;
 }
 
-bar {
+int bar {
 	9*11;
 	return 72;
 }

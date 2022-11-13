@@ -26,16 +26,23 @@ public class Listener extends FoliageBaseListener {
             MUL,
             DIV
         }
-		
-        List<Integer> values = new ArrayList<Integer>();
+
         List<Operator> operators = new ArrayList<Operator>();
+    }
+
+    static class IntOperation extends Operation {
+        List<Integer> values = new ArrayList<Integer>();
+    }
+
+    static class FloatOperation extends Operation {
+        List<Float> values = new ArrayList<Float>();
     }
 
     static class Method {
         List<Operation> operations = new ArrayList<Operation>();
         Operation op;
 
-        Integer returnValue = null;
+        String returnValue = "";
     }
 
     private Method method;
@@ -47,15 +54,31 @@ public class Listener extends FoliageBaseListener {
     }
 
     @Override
-    public void enterOperation(FoliageParser.OperationContext ctx) {
-		method.operations.add(new Operation());
+    public void enterIntOperation(FoliageParser.IntOperationContext ctx) {
+		method.operations.add(new IntOperation());
         method.op = method.operations.get(method.operations.size() - 1);
     }
 
     @Override
     public void exitInteger(FoliageParser.IntegerContext ctx) {
 		if (ctx.getText().isEmpty()) return;
-        method.op.values.add(Integer.parseInt(ctx.getText()));
+        if (method.op instanceof IntOperation op) {
+            op.values.add(Integer.parseInt(ctx.getText()));
+        }
+    }
+
+    @Override
+    public void enterFloatOperation(FoliageParser.FloatOperationContext ctx) {
+        method.operations.add(new FloatOperation());
+        method.op = method.operations.get(method.operations.size() - 1);
+    }
+
+    @Override
+    public void exitFloat(FoliageParser.FloatContext ctx) {
+        if (ctx.getText().isEmpty()) return;
+        if (method.op instanceof FloatOperation op) {
+            op.values.add(Float.parseFloat(ctx.getText()));
+        }
     }
 
     @Override
@@ -70,28 +93,62 @@ public class Listener extends FoliageBaseListener {
 
     @Override
     public void exitReturn(FoliageParser.ReturnContext ctx) {
-        method.returnValue = Integer.parseInt(ctx.value.getText());
+        method.returnValue = ctx.value.getText();
     }
 
     @Override
     public void exitMethod(FoliageParser.MethodContext ctx) {
-        MethodVisitor v = cw.visitMethod(Opcodes.ACC_PUBLIC + Opcodes.ACC_STATIC, ctx.name.getText(), "()I", null, null);
-        for (Operation op : method.operations) {
-            v.visitIntInsn(Opcodes.BIPUSH, op.values.get(0));
-            for (int i = 0; i < op.operators.size(); i++) {
-                v.visitIntInsn(Opcodes.BIPUSH, op.values.get(i + 1));
-                switch (op.operators.get(i)) {
-                    case ADD -> v.visitInsn(Opcodes.IADD);
-                    case SUB -> v.visitInsn(Opcodes.ISUB);
-                    case MUL -> v.visitInsn(Opcodes.IMUL);
-                    case DIV -> v.visitInsn(Opcodes.IDIV);
+        String descriptor = "()%RETURN";
+        switch (ctx.type.getText()) {
+            case "void" -> descriptor = descriptor.replaceFirst("%RETURN", "V");
+            case "int" -> descriptor = descriptor.replaceFirst("%RETURN", "I");
+            case "float" -> descriptor = descriptor.replaceFirst("%RETURN", "F");
+        }
+        MethodVisitor v = cw.visitMethod(Opcodes.ACC_PUBLIC + Opcodes.ACC_STATIC, ctx.name.getText(), descriptor, null, null);
+        for (Operation o : method.operations) {
+            if (o instanceof IntOperation op) {
+                v.visitIntInsn(Opcodes.BIPUSH, op.values.get(0));
+                for (int i = 0; i < op.operators.size(); i++) {
+                    v.visitIntInsn(Opcodes.BIPUSH, op.values.get(i + 1));
+                    switch (op.operators.get(i)) {
+                        case ADD -> v.visitInsn(Opcodes.IADD);
+                        case SUB -> v.visitInsn(Opcodes.ISUB);
+                        case MUL -> v.visitInsn(Opcodes.IMUL);
+                        case DIV -> v.visitInsn(Opcodes.IDIV);
+                    }
+                }
+            } else if (o instanceof FloatOperation op) {
+                v.visitLdcInsn(op.values.get(0));
+                for (int i = 0; i < op.operators.size(); i++) {
+                    v.visitLdcInsn(op.values.get(i + 1));
+                    switch (op.operators.get(i)) {
+                        case ADD -> v.visitInsn(Opcodes.FADD);
+                        case SUB -> v.visitInsn(Opcodes.FSUB);
+                        case MUL -> v.visitInsn(Opcodes.FMUL);
+                        case DIV -> v.visitInsn(Opcodes.FDIV);
+                    }
                 }
             }
         }
-        if (method.returnValue != null) {
-            v.visitIntInsn(Opcodes.BIPUSH, method.returnValue);
+        if (method.returnValue.isEmpty()) {
+            switch (ctx.type.getText()) {
+                case "void" -> v.visitInsn(Opcodes.RETURN);
+                case "int" -> v.visitInsn(Opcodes.IRETURN);
+                case "float" -> v.visitInsn(Opcodes.FRETURN);
+            }
+        } else {
+            switch (ctx.type.getText()) {
+                case "void" -> v.visitInsn(Opcodes.RETURN);
+                case "int" -> {
+                    v.visitIntInsn(Opcodes.BIPUSH, Integer.parseInt(method.returnValue));
+                    v.visitInsn(Opcodes.IRETURN);
+                }
+                case "float" -> {
+                    v.visitLdcInsn(Float.parseFloat(method.returnValue));
+                    v.visitInsn(Opcodes.FRETURN);
+                }
+            }
         }
-        v.visitInsn(Opcodes.IRETURN);
 
         v.visitMaxs(0, 0);
         v.visitEnd();

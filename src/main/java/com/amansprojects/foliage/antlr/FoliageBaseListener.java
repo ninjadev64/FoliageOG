@@ -53,13 +53,25 @@ public class FoliageBaseListener implements FoliageListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterOperation(FoliageParser.OperationContext ctx) { }
+	@Override public void enterIntOperation(FoliageParser.IntOperationContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitOperation(FoliageParser.OperationContext ctx) { }
+	@Override public void exitIntOperation(FoliageParser.IntOperationContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterFloatOperation(FoliageParser.FloatOperationContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitFloatOperation(FoliageParser.FloatOperationContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
@@ -96,6 +108,18 @@ public class FoliageBaseListener implements FoliageListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitInteger(FoliageParser.IntegerContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterFloat(FoliageParser.FloatContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitFloat(FoliageParser.FloatContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *

@@ -38,15 +38,25 @@ public interface FoliageListener extends ParseTreeListener {
 	 */
 	void exitStatement(FoliageParser.StatementContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link FoliageParser#operation}.
+	 * Enter a parse tree produced by {@link FoliageParser#intOperation}.
 	 * @param ctx the parse tree
 	 */
-	void enterOperation(FoliageParser.OperationContext ctx);
+	void enterIntOperation(FoliageParser.IntOperationContext ctx);
 	/**
-	 * Exit a parse tree produced by {@link FoliageParser#operation}.
+	 * Exit a parse tree produced by {@link FoliageParser#intOperation}.
 	 * @param ctx the parse tree
 	 */
-	void exitOperation(FoliageParser.OperationContext ctx);
+	void exitIntOperation(FoliageParser.IntOperationContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link FoliageParser#floatOperation}.
+	 * @param ctx the parse tree
+	 */
+	void enterFloatOperation(FoliageParser.FloatOperationContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link FoliageParser#floatOperation}.
+	 * @param ctx the parse tree
+	 */
+	void exitFloatOperation(FoliageParser.FloatOperationContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link FoliageParser#return}.
 	 * @param ctx the parse tree
@@ -77,6 +87,16 @@ public interface FoliageListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitInteger(FoliageParser.IntegerContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link FoliageParser#float}.
+	 * @param ctx the parse tree
+	 */
+	void enterFloat(FoliageParser.FloatContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link FoliageParser#float}.
+	 * @param ctx the parse tree
+	 */
+	void exitFloat(FoliageParser.FloatContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link FoliageParser#string}.
 	 * @param ctx the parse tree
