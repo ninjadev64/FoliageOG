@@ -10,11 +10,11 @@ import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Listener extends FoliageBaseListener {
+public class ClassListener extends FoliageBaseListener {
 	private final ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
 	public List<Method> methods = new ArrayList<Method>();
 	
-	public Listener() {
+	public ClassListener() {
 		super();
 		cw.visit(Opcodes.V17, Opcodes.ACC_PUBLIC, "GeneratedClass", null, "java/lang/Object", null);
 	}
@@ -158,7 +158,7 @@ public class Listener extends FoliageBaseListener {
 	public void exitProgram(FoliageParser.ProgramContext ctx) {
 		cw.visitEnd();
 		
-		try (FileOutputStream stream = new FileOutputStream("target/foliage/GeneratedClass.class")) {
+		try (FileOutputStream stream = new FileOutputStream("target/classes/GeneratedClass.class")) {
             stream.write(cw.toByteArray());
         } catch (Exception e) {
             e.printStackTrace();

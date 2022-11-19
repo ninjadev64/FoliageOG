@@ -20,14 +20,14 @@ public class FoliageCompiler {
 		        sb.append(System.lineSeparator());
 		        line = br.readLine();
 		    }
-		    String everything = sb.toString();
 			
-			FoliageLexer lexer = new FoliageLexer(CharStreams.fromString(everything));
-			CommonTokenStream tokens = new CommonTokenStream(lexer);
-			parser = new FoliageParser(tokens);
-			Listener listener = new Listener();
+			FoliageLexer lexer = new FoliageLexer(CharStreams.fromString(sb.toString()));
+			parser = new FoliageParser(new CommonTokenStream(lexer));
+			ClassListener listener = new ClassListener();
 			parser.addParseListener(listener);
 			parser.program();
+
+			br.close();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
