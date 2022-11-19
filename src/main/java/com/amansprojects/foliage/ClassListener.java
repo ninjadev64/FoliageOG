@@ -5,6 +5,7 @@ import com.amansprojects.foliage.antlr.FoliageParser;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
 
 import java.io.FileOutputStream;
 import java.util.ArrayList;
@@ -43,6 +44,7 @@ public class ClassListener extends FoliageBaseListener {
         Operation op;
 
         String returnValue = "";
+        int returnType;
     }
 
     private Method method;
@@ -98,11 +100,16 @@ public class ClassListener extends FoliageBaseListener {
 
     @Override
     public void exitMethod(FoliageParser.MethodContext ctx) {
-        String descriptor = "()%RETURN";
         switch (ctx.type.getText()) {
-            case "void" -> descriptor = descriptor.replaceFirst("%RETURN", "V");
-            case "int" -> descriptor = descriptor.replaceFirst("%RETURN", "I");
-            case "float" -> descriptor = descriptor.replaceFirst("%RETURN", "F");
+            case "void" -> method.returnType = Type.VOID;
+            case "int" -> method.returnType = Type.INT;
+            case "float" -> method.returnType = Type.FLOAT;
+        }
+        String descriptor = "()%RETURN";
+        switch (method.returnType) {
+            case Type.VOID -> descriptor = descriptor.replaceFirst("%RETURN", "V");
+            case Type.INT -> descriptor = descriptor.replaceFirst("%RETURN", "I");
+            case Type.FLOAT -> descriptor = descriptor.replaceFirst("%RETURN", "F");
         }
         MethodVisitor v = cw.visitMethod(Opcodes.ACC_PUBLIC + Opcodes.ACC_STATIC, ctx.name.getText(), descriptor, null, null);
         for (Operation o : method.operations) {
@@ -131,19 +138,19 @@ public class ClassListener extends FoliageBaseListener {
             }
         }
         if (method.returnValue.isEmpty()) {
-            switch (ctx.type.getText()) {
-                case "void" -> v.visitInsn(Opcodes.RETURN);
-                case "int" -> v.visitInsn(Opcodes.IRETURN);
-                case "float" -> v.visitInsn(Opcodes.FRETURN);
+            switch (method.returnType) {
+                case Type.VOID -> v.visitInsn(Opcodes.RETURN);
+                case Type.INT -> v.visitInsn(Opcodes.IRETURN);
+                case Type.FLOAT -> v.visitInsn(Opcodes.FRETURN);
             }
         } else {
-            switch (ctx.type.getText()) {
-                case "void" -> v.visitInsn(Opcodes.RETURN);
-                case "int" -> {
+            switch (method.returnType) {
+                case Type.VOID -> v.visitInsn(Opcodes.RETURN);
+                case Type.INT -> {
                     v.visitIntInsn(Opcodes.BIPUSH, Integer.parseInt(method.returnValue));
                     v.visitInsn(Opcodes.IRETURN);
                 }
-                case "float" -> {
+                case Type.FLOAT -> {
                     v.visitLdcInsn(Float.parseFloat(method.returnValue));
                     v.visitInsn(Opcodes.FRETURN);
                 }
