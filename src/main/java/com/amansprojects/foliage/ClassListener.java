@@ -20,28 +20,77 @@ public class ClassListener extends FoliageBaseListener {
 		cw.visit(Opcodes.V17, Opcodes.ACC_PUBLIC, "GeneratedClass", null, "java/lang/Object", null);
 	}
 
-    static class Operation {
-        enum Operator {
-            ADD,
-            SUB,
-            MUL,
-            DIV
+    interface Statement {
+        public void invoke(MethodVisitor v);
+    }
+
+    enum Operator {
+        ADD,
+        SUB,
+        MUL,
+        DIV
+    }
+
+    interface Operation<T> {
+        public void value(T value);
+        public void operator(Operator operator);
+    }
+
+    static class IntOperation implements Statement, Operation<Integer> {
+        private List<Integer> values = new ArrayList<Integer>();
+        private List<Operator> operators = new ArrayList<Operator>();
+
+        public void value(Integer i) {
+            values.add(i);
         }
 
-        List<Operator> operators = new ArrayList<Operator>();
+        public void operator(Operator o) {
+            operators.add(o);
+        }
+
+        public void invoke(MethodVisitor v) {
+            v.visitLdcInsn(values.get(0));
+            for (int i = 0; i < operators.size(); i++) {
+                v.visitLdcInsn(values.get(i + 1));
+                switch (operators.get(i)) {
+                    case ADD -> v.visitInsn(Opcodes.IADD);
+                    case SUB -> v.visitInsn(Opcodes.ISUB);
+                    case MUL -> v.visitInsn(Opcodes.IMUL);
+                    case DIV -> v.visitInsn(Opcodes.IDIV);
+                }
+            }
+        }
     }
 
-    static class IntOperation extends Operation {
-        List<Integer> values = new ArrayList<Integer>();
-    }
+    static class FloatOperation implements Statement, Operation<Float> {
+        private List<Float> values = new ArrayList<Float>();
+        private List<Operator> operators = new ArrayList<Operator>();
 
-    static class FloatOperation extends Operation {
-        List<Float> values = new ArrayList<Float>();
+        public void value(Float f) {
+            values.add(f);
+        }
+
+        public void operator(Operator o) {
+            operators.add(o);
+        }
+
+        public void invoke(MethodVisitor v) {
+            v.visitLdcInsn(values.get(0));
+            for (int i = 0; i < operators.size(); i++) {
+                v.visitLdcInsn(values.get(i + 1));
+                switch (operators.get(i)) {
+                    case ADD -> v.visitInsn(Opcodes.FADD);
+                    case SUB -> v.visitInsn(Opcodes.FSUB);
+                    case MUL -> v.visitInsn(Opcodes.FMUL);
+                    case DIV -> v.visitInsn(Opcodes.FDIV);
+                }
+            }
+        }
     }
 
     static class Method {
-        List<Operation> operations = new ArrayList<Operation>();
-        Operation op;
+        List<Statement> statements = new ArrayList<Statement>();
+        Statement st;
 
         String returnValue = "";
         int returnType;
@@ -57,39 +106,41 @@ public class ClassListener extends FoliageBaseListener {
 
     @Override
     public void enterIntOperation(FoliageParser.IntOperationContext ctx) {
-		method.operations.add(new IntOperation());
-        method.op = method.operations.get(method.operations.size() - 1);
+		method.statements.add(new IntOperation());
+        method.st = method.statements.get(method.statements.size() - 1);
     }
 
     @Override
     public void exitInteger(FoliageParser.IntegerContext ctx) {
 		if (ctx.getText().isEmpty()) return;
-        if (method.op instanceof IntOperation op) {
+        if (method.st instanceof IntOperation op) {
             op.values.add(Integer.parseInt(ctx.getText()));
         }
     }
 
     @Override
     public void enterFloatOperation(FoliageParser.FloatOperationContext ctx) {
-        method.operations.add(new FloatOperation());
-        method.op = method.operations.get(method.operations.size() - 1);
+        method.statements.add(new FloatOperation());
+        method.st = method.statements.get(method.statements.size() - 1);
     }
 
     @Override
     public void exitFloat(FoliageParser.FloatContext ctx) {
         if (ctx.getText().isEmpty()) return;
-        if (method.op instanceof FloatOperation op) {
+        if (method.st instanceof FloatOperation op) {
             op.values.add(Float.parseFloat(ctx.getText()));
         }
     }
 
     @Override
     public void exitOperator(FoliageParser.OperatorContext ctx) {
-        switch (ctx.getText()) {
-            case "+" -> method.op.operators.add(Operation.Operator.ADD);
-            case "-" -> method.op.operators.add(Operation.Operator.SUB);
-            case "*" -> method.op.operators.add(Operation.Operator.MUL);
-            case "/" -> method.op.operators.add(Operation.Operator.DIV);
+        if (method.st instanceof Operation<?> op) {
+            switch (ctx.getText()) {
+                case "+" -> op.operator(Operator.ADD);
+                case "-" -> op.operator(Operator.SUB);
+                case "*" -> op.operator(Operator.MUL);
+                case "/" -> op.operator(Operator.DIV);
+            }
         }
     }
 
@@ -112,30 +163,8 @@ public class ClassListener extends FoliageBaseListener {
             case Type.FLOAT -> descriptor = descriptor.replaceFirst("%RETURN", "F");
         }
         MethodVisitor v = cw.visitMethod(Opcodes.ACC_PUBLIC + Opcodes.ACC_STATIC, ctx.name.getText(), descriptor, null, null);
-        for (Operation o : method.operations) {
-            if (o instanceof IntOperation op) {
-                v.visitIntInsn(Opcodes.BIPUSH, op.values.get(0));
-                for (int i = 0; i < op.operators.size(); i++) {
-                    v.visitIntInsn(Opcodes.BIPUSH, op.values.get(i + 1));
-                    switch (op.operators.get(i)) {
-                        case ADD -> v.visitInsn(Opcodes.IADD);
-                        case SUB -> v.visitInsn(Opcodes.ISUB);
-                        case MUL -> v.visitInsn(Opcodes.IMUL);
-                        case DIV -> v.visitInsn(Opcodes.IDIV);
-                    }
-                }
-            } else if (o instanceof FloatOperation op) {
-                v.visitLdcInsn(op.values.get(0));
-                for (int i = 0; i < op.operators.size(); i++) {
-                    v.visitLdcInsn(op.values.get(i + 1));
-                    switch (op.operators.get(i)) {
-                        case ADD -> v.visitInsn(Opcodes.FADD);
-                        case SUB -> v.visitInsn(Opcodes.FSUB);
-                        case MUL -> v.visitInsn(Opcodes.FMUL);
-                        case DIV -> v.visitInsn(Opcodes.FDIV);
-                    }
-                }
-            }
+        for (Statement st : method.statements) {
+            st.invoke(v);
         }
         if (method.returnValue.isEmpty()) {
             switch (method.returnType) {
@@ -147,7 +176,7 @@ public class ClassListener extends FoliageBaseListener {
             switch (method.returnType) {
                 case Type.VOID -> v.visitInsn(Opcodes.RETURN);
                 case Type.INT -> {
-                    v.visitIntInsn(Opcodes.BIPUSH, Integer.parseInt(method.returnValue));
+                    v.visitLdcInsn(Integer.parseInt(method.returnValue));
                     v.visitInsn(Opcodes.IRETURN);
                 }
                 case Type.FLOAT -> {
