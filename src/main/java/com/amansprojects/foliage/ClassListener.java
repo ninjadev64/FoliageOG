@@ -10,6 +10,7 @@ import org.objectweb.asm.Type;
 import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 
 public class ClassListener extends FoliageBaseListener {
@@ -31,7 +32,7 @@ public class ClassListener extends FoliageBaseListener {
     }
 
     interface Statement {
-        public void invoke(MethodVisitor v);
+        void invoke(MethodVisitor v);
     }
 
     enum Operator {
@@ -39,26 +40,32 @@ public class ClassListener extends FoliageBaseListener {
     }
 
     interface Operation<T> {
-        public void value(T value);
-        public void operator(Operator operator);
+        void value(T value);
+        void var(String name);
+        void operator(Operator operator);
     }
 
-    static class IntOperation implements Statement, Operation<Integer> {
+    class IntOperation implements Statement, Operation<Integer> {
         private List<Integer> values = new ArrayList<>();
         private List<Operator> operators = new ArrayList<>();
+        private LinkedList<String> vars = new LinkedList<>();
 
         public void value(Integer i) {
             values.add(i);
         }
-
+        public void var(String n) {
+            vars.add(n);
+        }
         public void operator(Operator o) {
             operators.add(o);
         }
 
         public void invoke(MethodVisitor v) {
-            v.visitLdcInsn(values.get(0));
+            if (values.get(0) == null) v.visitVarInsn(Opcodes.ILOAD, method.vars.indexOf(vars.removeFirst()));
+            else v.visitLdcInsn(values.get(0));
             for (int i = 0; i < operators.size(); i++) {
-                v.visitLdcInsn(values.get(i + 1));
+                if (values.get(i + 1) == null) v.visitVarInsn(Opcodes.ILOAD, method.vars.indexOf(vars.removeFirst()));
+                else v.visitLdcInsn(values.get(i + 1));
                 switch (operators.get(i)) {
                     case ADD -> v.visitInsn(Opcodes.IADD);
                     case SUB -> v.visitInsn(Opcodes.ISUB);
@@ -69,22 +76,27 @@ public class ClassListener extends FoliageBaseListener {
         }
     }
 
-    static class FloatOperation implements Statement, Operation<Float> {
+    class FloatOperation implements Statement, Operation<Float> {
         private List<Float> values = new ArrayList<>();
         private List<Operator> operators = new ArrayList<>();
+        private LinkedList<String> vars = new LinkedList<>();
 
         public void value(Float f) {
             values.add(f);
         }
-
+        public void var(String n) {
+            vars.add(n);
+        }
         public void operator(Operator o) {
             operators.add(o);
         }
 
         public void invoke(MethodVisitor v) {
-            v.visitLdcInsn(values.get(0));
+            if (values.get(0) == null) v.visitVarInsn(Opcodes.FLOAD, method.vars.indexOf(vars.removeFirst()));
+            else v.visitLdcInsn(values.get(0));
             for (int i = 0; i < operators.size(); i++) {
-                v.visitLdcInsn(values.get(i + 1));
+                if (values.get(i + 1) == null) v.visitVarInsn(Opcodes.FLOAD, method.vars.indexOf(vars.removeFirst()));
+                else v.visitLdcInsn(values.get(i + 1));
                 switch (operators.get(i)) {
                     case ADD -> v.visitInsn(Opcodes.FADD);
                     case SUB -> v.visitInsn(Opcodes.FSUB);
@@ -166,6 +178,14 @@ public class ClassListener extends FoliageBaseListener {
         if (ctx.getText().isEmpty()) return;
         if (method.st instanceof FloatOperation op) {
             op.values.add(Float.parseFloat(ctx.getText()));
+        }
+    }
+
+    @Override
+    public void exitVariable(FoliageParser.VariableContext ctx) {
+        if (method.st instanceof Operation<?> op) {
+            op.value(null);
+            op.var(ctx.getText());
         }
     }
 
