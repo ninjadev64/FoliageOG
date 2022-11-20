@@ -183,12 +183,12 @@ public class ClassListener extends FoliageBaseListener {
 
     @Override
     public void exitDeclaration(FoliageParser.DeclarationContext ctx) {
-        method.statements.add(new Declaration(ctx.name.getText(), stringToType(ctx.type.getText()), ctx.value.getText()));
+        method.statements.add(new Declaration(ctx.name.getText(), stringToType(ctx.type.getText()), ctx.val.getText()));
     }
 
     @Override
     public void exitReturn(FoliageParser.ReturnContext ctx) {
-        method.returnValue = ctx.value.getText();
+        method.returnValue = ctx.val.getText();
     }
 
     @Override
