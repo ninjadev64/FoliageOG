@@ -3,6 +3,7 @@ float foo {
 }
 
 int bar {
+	float baz = 63.9;
 	9*11;
 	return 72;
 }

@@ -58,6 +58,16 @@ public interface FoliageListener extends ParseTreeListener {
 	 */
 	void exitFloatOperation(FoliageParser.FloatOperationContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link FoliageParser#declaration}.
+	 * @param ctx the parse tree
+	 */
+	void enterDeclaration(FoliageParser.DeclarationContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link FoliageParser#declaration}.
+	 * @param ctx the parse tree
+	 */
+	void exitDeclaration(FoliageParser.DeclarationContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link FoliageParser#return}.
 	 * @param ctx the parse tree
 	 */

@@ -1,10 +1,11 @@
 grammar Foliage;
 
 program : (method)+ ;
-method : type=string ' '+ name=string ' '+? '{' statement+? '}' ;
-statement : (intOperation | floatOperation | return) ';' ;
+method : type=.*? ' '+ name=.*? ' '+? '{' statement+? '}' ;
+statement : (intOperation | floatOperation | declaration | return) ';' ;
 intOperation : (integer operator)+ integer ;
 floatOperation : (float operator)+ float ;
+declaration : type=.*? ' '+ name=.*? ' '+? '=' ' '+? value=.*? ;
 return : 'return ' value=. ;
 
 operator : ('+' | '-' | '*' | '/') ;

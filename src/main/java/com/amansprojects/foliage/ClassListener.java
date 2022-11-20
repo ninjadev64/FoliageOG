@@ -9,26 +9,33 @@ import org.objectweb.asm.Type;
 
 import java.io.FileOutputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 public class ClassListener extends FoliageBaseListener {
 	private final ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
-	public List<Method> methods = new ArrayList<Method>();
+	public List<Method> methods = new ArrayList<>();
 	
 	public ClassListener() {
 		super();
 		cw.visit(Opcodes.V17, Opcodes.ACC_PUBLIC, "GeneratedClass", null, "java/lang/Object", null);
 	}
 
+    private static int stringToType(String type) {
+        int t = Type.VOID;
+        switch (type) {
+            case "int" -> t = Type.INT;
+            case "float" -> t = Type.FLOAT;
+        }
+        return t;
+    }
+
     interface Statement {
         public void invoke(MethodVisitor v);
     }
 
     enum Operator {
-        ADD,
-        SUB,
-        MUL,
-        DIV
+        ADD, SUB, MUL, DIV
     }
 
     interface Operation<T> {
@@ -37,8 +44,8 @@ public class ClassListener extends FoliageBaseListener {
     }
 
     static class IntOperation implements Statement, Operation<Integer> {
-        private List<Integer> values = new ArrayList<Integer>();
-        private List<Operator> operators = new ArrayList<Operator>();
+        private List<Integer> values = new ArrayList<>();
+        private List<Operator> operators = new ArrayList<>();
 
         public void value(Integer i) {
             values.add(i);
@@ -63,8 +70,8 @@ public class ClassListener extends FoliageBaseListener {
     }
 
     static class FloatOperation implements Statement, Operation<Float> {
-        private List<Float> values = new ArrayList<Float>();
-        private List<Operator> operators = new ArrayList<Operator>();
+        private List<Float> values = new ArrayList<>();
+        private List<Operator> operators = new ArrayList<>();
 
         public void value(Float f) {
             values.add(f);
@@ -88,12 +95,42 @@ public class ClassListener extends FoliageBaseListener {
         }
     }
 
+    class Declaration implements Statement {
+        final String name;
+        final int type;
+        final String value;
+
+        public Declaration(String name, int type, String value) {
+            this.name = name;
+            this.type = type;
+            this.value = value;
+        }
+
+        public void invoke(MethodVisitor v) {
+            switch (type) {
+                case Type.INT -> {
+                    v.visitLdcInsn(Integer.parseInt(value));
+                    v.visitVarInsn(Opcodes.ISTORE, method.vars.size());
+                }
+                case Type.FLOAT -> {
+                    v.visitLdcInsn(Float.parseFloat(value));
+                    v.visitVarInsn(Opcodes.FSTORE, method.vars.size());
+                }
+            }
+            method.vars.add(name);
+            method.varTypes.put(name, type);
+        }
+    }
+
     static class Method {
-        List<Statement> statements = new ArrayList<Statement>();
+        List<Statement> statements = new ArrayList<>();
         Statement st;
 
         String returnValue = "";
         int returnType;
+
+        List<String> vars = new ArrayList<>();
+        HashMap<String, Integer> varTypes = new HashMap<>();
     }
 
     private Method method;
@@ -145,17 +182,18 @@ public class ClassListener extends FoliageBaseListener {
     }
 
     @Override
+    public void exitDeclaration(FoliageParser.DeclarationContext ctx) {
+        method.statements.add(new Declaration(ctx.name.getText(), stringToType(ctx.type.getText()), ctx.value.getText()));
+    }
+
+    @Override
     public void exitReturn(FoliageParser.ReturnContext ctx) {
         method.returnValue = ctx.value.getText();
     }
 
     @Override
     public void exitMethod(FoliageParser.MethodContext ctx) {
-        switch (ctx.type.getText()) {
-            case "void" -> method.returnType = Type.VOID;
-            case "int" -> method.returnType = Type.INT;
-            case "float" -> method.returnType = Type.FLOAT;
-        }
+        method.returnType = stringToType(ctx.type.getText());
         String descriptor = "()%RETURN";
         switch (method.returnType) {
             case Type.VOID -> descriptor = descriptor.replaceFirst("%RETURN", "V");
