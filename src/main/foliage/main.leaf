@@ -5,6 +5,6 @@ float foo {
 }
 
 int bar {
-	foo();
+	Printer.print();
 	return 72;
 }

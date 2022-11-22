@@ -78,6 +78,16 @@ public interface FoliageListener extends ParseTreeListener {
 	 */
 	void exitMethodCall(FoliageParser.MethodCallContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link FoliageParser#externalMethodCall}.
+	 * @param ctx the parse tree
+	 */
+	void enterExternalMethodCall(FoliageParser.ExternalMethodCallContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link FoliageParser#externalMethodCall}.
+	 * @param ctx the parse tree
+	 */
+	void exitExternalMethodCall(FoliageParser.ExternalMethodCallContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link FoliageParser#return}.
 	 * @param ctx the parse tree
 	 */

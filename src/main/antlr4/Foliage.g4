@@ -1,12 +1,13 @@
 grammar Foliage;
 
 program : (method)+ ;
-method : type=Id ' '+ name=Id ' '+? '{' statement+? '}' ;
-statement : (intOperation | floatOperation | declaration | methodCall | return) ';' ;
+method : type=Id ' '+ name=Id ' '* '{' statement+? '}' ;
+statement : (intOperation | floatOperation | declaration | methodCall | externalMethodCall | return) ' '* ';' ;
 intOperation : ((integer | variable) operator)+ (integer | variable) ;
 floatOperation : ((float | variable) operator)+ (float | variable) ;
-declaration : type=Id ' '+ name=Id ' '+? '=' ' '+? val=value ;
+declaration : type=Id ' '+ name=Id ' '* '=' ' '* val=value ;
 methodCall : name=Id '()' ;
+externalMethodCall : klass=Id '.' name=Id '()' ;
 return : 'return ' val=value ;
 
 operator : ('+' | '-' | '*' | '/') ;

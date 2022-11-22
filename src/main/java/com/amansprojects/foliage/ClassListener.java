@@ -15,12 +15,13 @@ import java.util.List;
 
 public class ClassListener extends FoliageBaseListener {
 	private final ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+    public final String className = "GeneratedClass";
 	public HashMap<String, Method> methods = new HashMap<>();
 	
 	public ClassListener() {
 		super();
-        Logger.trace("Parsing class GeneratedClass");
-		cw.visit(Opcodes.V17, Opcodes.ACC_PUBLIC, "GeneratedClass", null, "java/lang/Object", null);
+        Logger.trace("Parsing class " + className);
+		cw.visit(Opcodes.V17, Opcodes.ACC_PUBLIC, className, null, "java/lang/Object", null);
 	}
 
     private static int stringToType(String type) {
@@ -137,9 +138,11 @@ public class ClassListener extends FoliageBaseListener {
     }
 
     class MethodCall implements Statement {
+        public final String klass;
         public final String name;
 
-        public MethodCall(String name) {
+        public MethodCall(String klass, String name) {
+            this.klass = klass;
             this.name = name;
         }
 
@@ -160,14 +163,20 @@ public class ClassListener extends FoliageBaseListener {
 
         public void invoke(MethodVisitor v) {
             Logger.trace("Compiling method call of " + name);
-            String signature = methods.get(name).signature;
-            /*try {
-                Class<?> clazz = Class.forName("Util");
-                signature = getSignature(clazz.getMethod(name));
-            } catch (ClassNotFoundException | NoSuchMethodException e) {
-                Logger.error("Failed to get signature of Java method: " + e.getStackTrace().toString());
-            }*/
-            v.visitMethodInsn(Opcodes.INVOKESTATIC, "GeneratedClass", name, signature, false);
+            String clazz = klass;
+            String signature = "()V";
+            if (klass == null) {
+                clazz = className;
+                signature = methods.get(name).signature;
+            } else {
+                try {
+                    Class<?> klazz = Class.forName(klass);
+                    signature = getSignature(klazz.getMethod(name));
+                } catch (ClassNotFoundException | NoSuchMethodException e) {
+                    Logger.error("Failed to get signature of Java method: " + e.getStackTrace().toString());
+                }
+            }
+            v.visitMethodInsn(Opcodes.INVOKESTATIC, clazz, name, signature, false);
         }
     }
 
@@ -240,19 +249,25 @@ public class ClassListener extends FoliageBaseListener {
 
     @Override
     public void exitDeclaration(FoliageParser.DeclarationContext ctx) {
-        Logger.trace("Parsing local variable declaration");
+        Logger.trace("Parsing local variable declaration of " + ctx.name.getText());
         method.statements.add(new Declaration(ctx.name.getText(), stringToType(ctx.type.getText()), ctx.val.getText()));
     }
 
     @Override
     public void exitMethodCall(FoliageParser.MethodCallContext ctx) {
-        Logger.trace("Parsing method call");
-        method.statements.add(new MethodCall(ctx.name.getText()));
+        Logger.trace("Parsing method call of " + ctx.name.getText());
+        method.statements.add(new MethodCall("GeneratedClass", ctx.name.getText()));
+    }
+
+    @Override
+    public void exitExternalMethodCall(FoliageParser.ExternalMethodCallContext ctx) {
+        Logger.trace("Parsing external method call of " + ctx.klass.getText() + "." + ctx.name.getText());
+        method.statements.add(new MethodCall(ctx.klass.getText(), ctx.name.getText()));
     }
 
     @Override
     public void exitReturn(FoliageParser.ReturnContext ctx) {
-        Logger.trace("Parsing return statement");
+        Logger.trace("Parsing return statement with value " + ctx.val.getText());
         method.returnValue = ctx.val.getText();
     }
 
