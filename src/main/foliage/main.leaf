@@ -1,9 +1,10 @@
 float foo {
+	int baz = 64;
+	2*baz;
 	72.9*63.4-32+24f;
 }
 
 int bar {
-	int baz = 64;
-	2*baz;
+	foo();
 	return 72;
 }

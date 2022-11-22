@@ -15,7 +15,7 @@ import java.util.List;
 
 public class ClassListener extends FoliageBaseListener {
 	private final ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
-	public List<Method> methods = new ArrayList<>();
+	public HashMap<String, Method> methods = new HashMap<>();
 	
 	public ClassListener() {
 		super();
@@ -134,12 +134,47 @@ public class ClassListener extends FoliageBaseListener {
         }
     }
 
+    class MethodCall implements Statement {
+        public final String name;
+
+        public MethodCall(String name) {
+            this.name = name;
+        }
+
+        public static String getSignature(java.lang.reflect.Method m) {
+            String sig;
+        
+            StringBuilder sb = new StringBuilder("(");
+            for (Class<?> c : m.getParameterTypes()) 
+                sb.append((sig=java.lang.reflect.Array.newInstance(c, 0).toString())
+                    .substring(1, sig.indexOf('@')));
+            return sb.append(')')
+                .append(
+                    m.getReturnType()==void.class?"V":
+                    (sig=java.lang.reflect.Array.newInstance(m.getReturnType(), 0).toString()).substring(1, sig.indexOf('@'))
+                )
+                .toString().replace('.', '/');
+        }
+
+        public void invoke(MethodVisitor v) {
+            String signature = methods.get(name).signature;
+            /*try {
+                Class<?> clazz = Class.forName("Util");
+                signature = getSignature(clazz.getMethod(name));
+            } catch (ClassNotFoundException | NoSuchMethodException e) {
+                e.printStackTrace();
+            }*/
+            v.visitMethodInsn(Opcodes.INVOKESTATIC, "GeneratedClass", name, signature, false);
+        }
+    }
+
     static class Method {
         List<Statement> statements = new ArrayList<>();
         Statement st;
 
         String returnValue = "";
         int returnType;
+        String signature;
 
         List<String> vars = new ArrayList<>();
         HashMap<String, Integer> varTypes = new HashMap<>();
@@ -149,8 +184,7 @@ public class ClassListener extends FoliageBaseListener {
 
     @Override
     public void enterMethod(FoliageParser.MethodContext ctx) {
-        methods.add(new Method());
-        method = methods.get(methods.size() - 1);
+        method = new Method();
     }
 
     @Override
@@ -207,6 +241,11 @@ public class ClassListener extends FoliageBaseListener {
     }
 
     @Override
+    public void exitMethodCall(FoliageParser.MethodCallContext ctx) {
+        method.statements.add(new MethodCall(ctx.name.getText()));
+    }
+
+    @Override
     public void exitReturn(FoliageParser.ReturnContext ctx) {
         method.returnValue = ctx.val.getText();
     }
@@ -214,13 +253,14 @@ public class ClassListener extends FoliageBaseListener {
     @Override
     public void exitMethod(FoliageParser.MethodContext ctx) {
         method.returnType = stringToType(ctx.type.getText());
-        String descriptor = "()%RETURN";
+        StringBuilder sb = new StringBuilder("()");
         switch (method.returnType) {
-            case Type.VOID -> descriptor = descriptor.replaceFirst("%RETURN", "V");
-            case Type.INT -> descriptor = descriptor.replaceFirst("%RETURN", "I");
-            case Type.FLOAT -> descriptor = descriptor.replaceFirst("%RETURN", "F");
+            case Type.VOID -> sb.append("V");
+            case Type.INT -> sb.append("I");
+            case Type.FLOAT -> sb.append("F");
         }
-        MethodVisitor v = cw.visitMethod(Opcodes.ACC_PUBLIC + Opcodes.ACC_STATIC, ctx.name.getText(), descriptor, null, null);
+        method.signature = sb.toString();
+        MethodVisitor v = cw.visitMethod(Opcodes.ACC_PUBLIC + Opcodes.ACC_STATIC, ctx.name.getText(), method.signature, null, null);
         for (Statement st : method.statements) {
             st.invoke(v);
         }
@@ -246,6 +286,8 @@ public class ClassListener extends FoliageBaseListener {
 
         v.visitMaxs(0, 0);
         v.visitEnd();
+
+        methods.put(ctx.name.getText(), method);
     }
 
 	@Override
