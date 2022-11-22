@@ -19,6 +19,7 @@ public class ClassListener extends FoliageBaseListener {
 	
 	public ClassListener() {
 		super();
+        Logger.trace("Parsing class GeneratedClass");
 		cw.visit(Opcodes.V17, Opcodes.ACC_PUBLIC, "GeneratedClass", null, "java/lang/Object", null);
 	}
 
@@ -119,6 +120,7 @@ public class ClassListener extends FoliageBaseListener {
         }
 
         public void invoke(MethodVisitor v) {
+            Logger.trace("Compiling local variable declaration " + name);
             switch (type) {
                 case Type.INT -> {
                     v.visitLdcInsn(Integer.parseInt(value));
@@ -157,12 +159,13 @@ public class ClassListener extends FoliageBaseListener {
         }
 
         public void invoke(MethodVisitor v) {
+            Logger.trace("Compiling method call of " + name);
             String signature = methods.get(name).signature;
             /*try {
                 Class<?> clazz = Class.forName("Util");
                 signature = getSignature(clazz.getMethod(name));
             } catch (ClassNotFoundException | NoSuchMethodException e) {
-                e.printStackTrace();
+                Logger.error("Failed to get signature of Java method: " + e.getStackTrace().toString());
             }*/
             v.visitMethodInsn(Opcodes.INVOKESTATIC, "GeneratedClass", name, signature, false);
         }
@@ -198,7 +201,7 @@ public class ClassListener extends FoliageBaseListener {
 		if (ctx.getText().isEmpty()) return;
         if (method.st instanceof IntOperation op) {
             op.values.add(Integer.parseInt(ctx.getText()));
-        }
+        } else Logger.error("Failed to parse integer while parsing an incompatible statement");
     }
 
     @Override
@@ -212,7 +215,7 @@ public class ClassListener extends FoliageBaseListener {
         if (ctx.getText().isEmpty()) return;
         if (method.st instanceof FloatOperation op) {
             op.values.add(Float.parseFloat(ctx.getText()));
-        }
+        } else Logger.error("Failed to parse float while parsing an incompatible statement");
     }
 
     @Override
@@ -237,21 +240,25 @@ public class ClassListener extends FoliageBaseListener {
 
     @Override
     public void exitDeclaration(FoliageParser.DeclarationContext ctx) {
+        Logger.trace("Parsing local variable declaration");
         method.statements.add(new Declaration(ctx.name.getText(), stringToType(ctx.type.getText()), ctx.val.getText()));
     }
 
     @Override
     public void exitMethodCall(FoliageParser.MethodCallContext ctx) {
+        Logger.trace("Parsing method call");
         method.statements.add(new MethodCall(ctx.name.getText()));
     }
 
     @Override
     public void exitReturn(FoliageParser.ReturnContext ctx) {
+        Logger.trace("Parsing return statement");
         method.returnValue = ctx.val.getText();
     }
 
     @Override
     public void exitMethod(FoliageParser.MethodContext ctx) {
+        Logger.trace("Compiling method " + ctx.name.getText());
         method.returnType = stringToType(ctx.type.getText());
         StringBuilder sb = new StringBuilder("()");
         switch (method.returnType) {
