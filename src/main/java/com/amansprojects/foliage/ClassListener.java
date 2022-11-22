@@ -210,7 +210,7 @@ public class ClassListener extends FoliageBaseListener {
 		if (ctx.getText().isEmpty()) return;
         if (method.st instanceof IntOperation op) {
             op.values.add(Integer.parseInt(ctx.getText()));
-        } else Logger.error("Failed to parse integer while parsing an incompatible statement");
+        }
     }
 
     @Override
@@ -224,7 +224,7 @@ public class ClassListener extends FoliageBaseListener {
         if (ctx.getText().isEmpty()) return;
         if (method.st instanceof FloatOperation op) {
             op.values.add(Float.parseFloat(ctx.getText()));
-        } else Logger.error("Failed to parse float while parsing an incompatible statement");
+        }
     }
 
     @Override

@@ -15,7 +15,7 @@ public class Logger {
     public static LogLevel level = LogLevel.INFO;
 
     public static String log(LogLevel l, String s) {
-        if (l.compareTo(level) >= 0) System.out.println(l.prefix + " " + s + "\u001b[0m");
+        if (l.compareTo(level) <= 0) System.out.println(l.prefix + " " + s + "\u001b[0m");
         return s;
     }
 
