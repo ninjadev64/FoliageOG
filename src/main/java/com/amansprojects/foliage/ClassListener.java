@@ -142,10 +142,12 @@ public class ClassListener extends FoliageBaseListener {
     class MethodCall implements Statement {
         public final String klass;
         public final String name;
+        private final int opcode;
 
-        public MethodCall(String klass, String name) {
+        public MethodCall(String klass, String name, int opcode) {
             this.klass = klass;
             this.name = name;
+            this.opcode = opcode;
         }
 
         public static String getSignature(java.lang.reflect.Method m) {
@@ -164,7 +166,7 @@ public class ClassListener extends FoliageBaseListener {
         }
 
         public void invoke(MethodVisitor v) {
-            Logger.trace("Compiling method call of " + klass == null ? className : klass + "." + name);
+            Logger.trace("Compiling method call of " + (klass == null ? className : klass) + "." + name);
             String clazz = klass;
             String signature = "()V";
             if (klass == null) {
@@ -178,7 +180,21 @@ public class ClassListener extends FoliageBaseListener {
                     Logger.error("Failed to get signature of Java method: " + ExceptionUtils.getStackTrace(e));
                 }
             }
-            v.visitMethodInsn(Opcodes.INVOKESTATIC, clazz, name, signature, false);
+            v.visitMethodInsn(opcode, clazz, name, signature, false);
+        }
+    }
+
+    class Instantiation implements Statement {
+        public final String klass;
+
+        public Instantiation(String klass) {
+            this.klass = klass;
+        }
+
+        public void invoke(MethodVisitor v) {
+            v.visitTypeInsn(Opcodes.NEW, klass);
+            v.visitInsn(Opcodes.DUP);
+            v.visitMethodInsn(Opcodes.INVOKESPECIAL, klass, "<init>", "()V", false);
         }
     }
 
@@ -258,13 +274,18 @@ public class ClassListener extends FoliageBaseListener {
     @Override
     public void exitMethodCall(FoliageParser.MethodCallContext ctx) {
         Logger.trace("Parsing method call of " + ctx.name.getText());
-        method.statements.add(new MethodCall(null, ctx.name.getText()));
+        method.statements.add(new MethodCall(null, ctx.name.getText(), Opcodes.INVOKESTATIC));
     }
 
     @Override
     public void exitExternalMethodCall(FoliageParser.ExternalMethodCallContext ctx) {
         Logger.trace("Parsing external method call of " + ctx.klass.getText() + "." + ctx.name.getText());
-        method.statements.add(new MethodCall(ctx.klass.getText(), ctx.name.getText()));
+        method.statements.add(new MethodCall(ctx.klass.getText(), ctx.name.getText(), Opcodes.INVOKESTATIC));
+    }
+
+    @Override
+    public void exitInstantiation(FoliageParser.InstantiationContext ctx) {
+        method.statements.add(new Instantiation(ctx.klass.getText()));
     }
 
     @Override

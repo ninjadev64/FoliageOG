@@ -113,6 +113,18 @@ public class FoliageBaseListener implements FoliageListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterInstantiation(FoliageParser.InstantiationContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitInstantiation(FoliageParser.InstantiationContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterReturn(FoliageParser.ReturnContext ctx) { }
 	/**
 	 * {@inheritDoc}

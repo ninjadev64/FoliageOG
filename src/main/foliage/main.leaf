@@ -5,6 +5,7 @@ float foo {
 }
 
 int bar {
+	new Printer();
 	Printer.print();
 	return 72;
 }
