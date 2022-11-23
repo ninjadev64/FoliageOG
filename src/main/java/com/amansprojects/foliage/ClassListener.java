@@ -13,6 +13,8 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.apache.commons.lang3.exception.ExceptionUtils;
+
 public class ClassListener extends FoliageBaseListener {
 	private final ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
     public final String className = "GeneratedClass";
@@ -162,7 +164,7 @@ public class ClassListener extends FoliageBaseListener {
         }
 
         public void invoke(MethodVisitor v) {
-            Logger.trace("Compiling method call of " + name);
+            Logger.trace("Compiling method call of " + klass == null ? className : klass + "." + name);
             String clazz = klass;
             String signature = "()V";
             if (klass == null) {
@@ -173,7 +175,7 @@ public class ClassListener extends FoliageBaseListener {
                     Class<?> klazz = Class.forName(klass);
                     signature = getSignature(klazz.getMethod(name));
                 } catch (ClassNotFoundException | NoSuchMethodException e) {
-                    Logger.error("Failed to get signature of Java method: " + e.getStackTrace().toString());
+                    Logger.error("Failed to get signature of Java method: " + ExceptionUtils.getStackTrace(e));
                 }
             }
             v.visitMethodInsn(Opcodes.INVOKESTATIC, clazz, name, signature, false);
@@ -256,7 +258,7 @@ public class ClassListener extends FoliageBaseListener {
     @Override
     public void exitMethodCall(FoliageParser.MethodCallContext ctx) {
         Logger.trace("Parsing method call of " + ctx.name.getText());
-        method.statements.add(new MethodCall("GeneratedClass", ctx.name.getText()));
+        method.statements.add(new MethodCall(null, ctx.name.getText()));
     }
 
     @Override
@@ -316,10 +318,10 @@ public class ClassListener extends FoliageBaseListener {
 	public void exitProgram(FoliageParser.ProgramContext ctx) {
 		cw.visitEnd();
 		
-		try (FileOutputStream stream = new FileOutputStream("target/classes/GeneratedClass.class")) {
+		try (FileOutputStream stream = new FileOutputStream("target/classes/" + className + ".class")) {
             stream.write(cw.toByteArray());
         } catch (Exception e) {
-            e.printStackTrace();
+            Logger.error("Failed to write class to file: " + ExceptionUtils.getStackTrace(e));
         }
 	}
 }
