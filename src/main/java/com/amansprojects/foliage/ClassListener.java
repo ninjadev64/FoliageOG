@@ -29,8 +29,10 @@ public class ClassListener extends FoliageBaseListener {
     private static int stringToType(String type) {
         int t = Type.VOID;
         switch (type) {
+            case "void" -> t = Type.VOID;
             case "int" -> t = Type.INT;
             case "float" -> t = Type.FLOAT;
+            default -> t = Type.OBJECT;
         }
         return t;
     }
@@ -111,19 +113,19 @@ public class ClassListener extends FoliageBaseListener {
         }
     }
 
-    class Declaration implements Statement {
+    class ValueDeclaration implements Statement {
         final String name;
         final int type;
         final String value;
 
-        public Declaration(String name, int type, String value) {
+        public ValueDeclaration(String name, int type, String value) {
             this.name = name;
             this.type = type;
             this.value = value;
         }
 
         public void invoke(MethodVisitor v) {
-            Logger.trace("Compiling local variable declaration " + name);
+            Logger.trace("Compiling value-based local variable declaration " + name);
             switch (type) {
                 case Type.INT -> {
                     v.visitLdcInsn(Integer.parseInt(value));
@@ -139,15 +141,43 @@ public class ClassListener extends FoliageBaseListener {
         }
     }
 
+    class StackDeclaration implements Statement {
+        final String name;
+        final int type;
+
+        public StackDeclaration(String name, int type) {
+            this.name = name;
+            this.type = type;
+        }
+
+        public void invoke(MethodVisitor v) {
+            Logger.trace("Compiling stack-based local variable declaration " + name);
+            switch (type) {
+                case Type.INT -> v.visitVarInsn(Opcodes.ISTORE, method.vars.size());
+                case Type.FLOAT -> v.visitVarInsn(Opcodes.FSTORE, method.vars.size());
+                case Type.OBJECT -> v.visitVarInsn(Opcodes.ASTORE, method.vars.size());
+            }
+            method.vars.add(name);
+            method.varTypes.put(name, type);
+        }
+    }
+
     class MethodCall implements Statement {
         public final String klass;
         public final String name;
         private final int opcode;
 
-        public MethodCall(String klass, String name, int opcode) {
+        public MethodCall(String klass, String name, String opcode) {
             this.klass = klass;
             this.name = name;
-            this.opcode = opcode;
+            switch (opcode.toLowerCase()) {
+                case "virtual" -> this.opcode = Opcodes.INVOKEVIRTUAL;
+                case "special" -> this.opcode = Opcodes.INVOKESPECIAL;
+                case "static" -> this.opcode = Opcodes.INVOKESTATIC;
+                case "interface" -> this.opcode = Opcodes.INVOKEINTERFACE;
+                case "dynamic" -> this.opcode = Opcodes.INVOKEDYNAMIC;
+                default -> this.opcode = Opcodes.INVOKESTATIC;
+            }
         }
 
         public static String getSignature(java.lang.reflect.Method m) {
@@ -266,21 +296,27 @@ public class ClassListener extends FoliageBaseListener {
     }
 
     @Override
-    public void exitDeclaration(FoliageParser.DeclarationContext ctx) {
-        Logger.trace("Parsing local variable declaration of " + ctx.name.getText());
-        method.statements.add(new Declaration(ctx.name.getText(), stringToType(ctx.type.getText()), ctx.val.getText()));
+    public void exitValueDeclaration(FoliageParser.ValueDeclarationContext ctx) {
+        Logger.trace("Parsing value-based local variable declaration of " + ctx.name.getText());
+        method.statements.add(new ValueDeclaration(ctx.name.getText(), stringToType(ctx.type.getText()), ctx.val.getText()));
+    }
+
+    @Override
+    public void exitStackDeclaration(FoliageParser.StackDeclarationContext ctx) {
+        Logger.trace("Parsing stack-based local variable declaration of " + ctx.name.getText());
+        method.statements.add(new StackDeclaration(ctx.name.getText(), stringToType(ctx.type.getText())));
     }
 
     @Override
     public void exitMethodCall(FoliageParser.MethodCallContext ctx) {
         Logger.trace("Parsing method call of " + ctx.name.getText());
-        method.statements.add(new MethodCall(null, ctx.name.getText(), Opcodes.INVOKESTATIC));
+        method.statements.add(new MethodCall(null, ctx.name.getText(), "static"));
     }
 
     @Override
     public void exitExternalMethodCall(FoliageParser.ExternalMethodCallContext ctx) {
         Logger.trace("Parsing external method call of " + ctx.klass.getText() + "." + ctx.name.getText());
-        method.statements.add(new MethodCall(ctx.klass.getText(), ctx.name.getText(), Opcodes.INVOKESTATIC));
+        method.statements.add(new MethodCall(ctx.klass.getText(), ctx.name.getText(), "static"));
     }
 
     @Override

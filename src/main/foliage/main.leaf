@@ -1,11 +1,11 @@
 float foo {
-	int baz = 64;
+	int baz = 2*32;
 	2*baz;
 	72.9*63.4-32+24f;
 }
 
 int bar {
-	new Printer();
+	Printer printer = new Printer();
 	Printer.print();
 	return 72;
 }

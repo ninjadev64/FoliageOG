@@ -2,10 +2,11 @@ grammar Foliage;
 
 program : (method)+ ;
 method : type=Id ' '+ name=Id ' '* '{' statement+? '}' ;
-statement : (intOperation | floatOperation | declaration | methodCall | externalMethodCall | instantiation | return) ' '* ';' ;
+statement : (intOperation | floatOperation | valueDeclaration | stackDeclaration | methodCall | externalMethodCall | instantiation | return) ' '* ';' ;
 intOperation : ((integer | variable) operator)+ (integer | variable) ;
 floatOperation : ((float | variable) operator)+ (float | variable) ;
-declaration : type=Id ' '+ name=Id ' '* '=' ' '* val=value ;
+valueDeclaration : type=Id ' '+ name=Id ' '* '=' ' '* val=value ;
+stackDeclaration : type=Id ' '+ name=Id ' '* '=' ' '* pushesToStack ;
 methodCall : name=Id '()' ;
 externalMethodCall : klass=Id '.' name=Id '()' ;
 instantiation : 'new ' klass=Id '()' ;
@@ -17,6 +18,7 @@ float : Number | (Number 'f') | (Number '.' Number) ;
 variable : Id ;
 string : '"' Id '"' ;
 value : integer | float | string ;
+pushesToStack : intOperation | floatOperation | methodCall | externalMethodCall | instantiation ;
 
 Id : IDEN+ ;
 Number : DIGIT+ ;

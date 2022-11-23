@@ -58,15 +58,25 @@ public interface FoliageListener extends ParseTreeListener {
 	 */
 	void exitFloatOperation(FoliageParser.FloatOperationContext ctx);
 	/**
-	 * Enter a parse tree produced by {@link FoliageParser#declaration}.
+	 * Enter a parse tree produced by {@link FoliageParser#valueDeclaration}.
 	 * @param ctx the parse tree
 	 */
-	void enterDeclaration(FoliageParser.DeclarationContext ctx);
+	void enterValueDeclaration(FoliageParser.ValueDeclarationContext ctx);
 	/**
-	 * Exit a parse tree produced by {@link FoliageParser#declaration}.
+	 * Exit a parse tree produced by {@link FoliageParser#valueDeclaration}.
 	 * @param ctx the parse tree
 	 */
-	void exitDeclaration(FoliageParser.DeclarationContext ctx);
+	void exitValueDeclaration(FoliageParser.ValueDeclarationContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link FoliageParser#stackDeclaration}.
+	 * @param ctx the parse tree
+	 */
+	void enterStackDeclaration(FoliageParser.StackDeclarationContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link FoliageParser#stackDeclaration}.
+	 * @param ctx the parse tree
+	 */
+	void exitStackDeclaration(FoliageParser.StackDeclarationContext ctx);
 	/**
 	 * Enter a parse tree produced by {@link FoliageParser#methodCall}.
 	 * @param ctx the parse tree
@@ -167,4 +177,14 @@ public interface FoliageListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitValue(FoliageParser.ValueContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link FoliageParser#pushesToStack}.
+	 * @param ctx the parse tree
+	 */
+	void enterPushesToStack(FoliageParser.PushesToStackContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link FoliageParser#pushesToStack}.
+	 * @param ctx the parse tree
+	 */
+	void exitPushesToStack(FoliageParser.PushesToStackContext ctx);
 }

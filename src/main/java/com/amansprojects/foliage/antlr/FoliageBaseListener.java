@@ -77,13 +77,25 @@ public class FoliageBaseListener implements FoliageListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterDeclaration(FoliageParser.DeclarationContext ctx) { }
+	@Override public void enterValueDeclaration(FoliageParser.ValueDeclarationContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void exitDeclaration(FoliageParser.DeclarationContext ctx) { }
+	@Override public void exitValueDeclaration(FoliageParser.ValueDeclarationContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterStackDeclaration(FoliageParser.StackDeclarationContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitStackDeclaration(FoliageParser.StackDeclarationContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
@@ -204,6 +216,18 @@ public class FoliageBaseListener implements FoliageListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitValue(FoliageParser.ValueContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterPushesToStack(FoliageParser.PushesToStackContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitPushesToStack(FoliageParser.PushesToStackContext ctx) { }
 
 	/**
 	 * {@inheritDoc}
