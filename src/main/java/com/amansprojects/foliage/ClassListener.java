@@ -136,7 +136,7 @@ public class ClassListener extends FoliageBaseListener {
                 v.visitLdcInsn(Integer.parseInt(value));
                 v.visitVarInsn(Opcodes.ISTORE, method.vars.size());
             }
-            else if (type.equals(Type.FLOAT)) {
+            else if (type.equals(Type.FLOAT_TYPE)) {
                 v.visitLdcInsn(Float.parseFloat(value));
                 v.visitVarInsn(Opcodes.FSTORE, method.vars.size());
             }
@@ -167,21 +167,12 @@ public class ClassListener extends FoliageBaseListener {
     }
 
     class MethodCall implements Statement {
-        public final String klass;
+        public final String owner;
         public final String name;
-        private final int opcode;
 
-        public MethodCall(String klass, String name, String opcode) {
-            this.klass = klass;
+        public MethodCall(String owner, String name) {
+            this.owner = owner;
             this.name = name;
-            switch (opcode.toLowerCase()) {
-                case "virtual" -> this.opcode = Opcodes.INVOKEVIRTUAL;
-                case "special" -> this.opcode = Opcodes.INVOKESPECIAL;
-                case "static" -> this.opcode = Opcodes.INVOKESTATIC;
-                case "interface" -> this.opcode = Opcodes.INVOKEINTERFACE;
-                case "dynamic" -> this.opcode = Opcodes.INVOKEDYNAMIC;
-                default -> this.opcode = Opcodes.INVOKESTATIC;
-            }
         }
 
         public static String getSignature(java.lang.reflect.Method m) {
@@ -200,15 +191,28 @@ public class ClassListener extends FoliageBaseListener {
         }
 
         public void invoke(MethodVisitor v) {
-            Logger.trace("Compiling method call of " + (klass == null ? className : klass) + "." + name);
-            String clazz = klass;
+            Logger.trace("Compiling method call of " + (owner == null ? className : owner) + "." + name);
+            String clazz;
             String signature = "()V";
-            if (klass == null) {
+            int opcode;
+            if (owner == null) {
+                opcode = Opcodes.INVOKESTATIC;
                 clazz = className;
                 signature = methods.get(name).signature;
-            } else {
+            } else if (method.varTypes.get(owner) != null) {
+                opcode = Opcodes.INVOKEVIRTUAL;
+                v.visitVarInsn(Opcodes.ALOAD, method.vars.indexOf(owner));
+                clazz = method.varTypes.get(owner).getClassName();
                 try {
-                    Class<?> klazz = Class.forName(klass);
+                    signature = Type.getMethodDescriptor(Class.forName(clazz).getMethod(name));
+                } catch (ClassNotFoundException | NoSuchMethodException e) {
+                    Logger.error("Failed to get signature of Java method: " + ExceptionUtils.getStackTrace(e));
+                }
+            } else {
+                opcode = Opcodes.INVOKESTATIC;
+                clazz = owner;
+                try {
+                    Class<?> klazz = Class.forName(clazz);
                     signature = getSignature(klazz.getMethod(name));
                 } catch (ClassNotFoundException | NoSuchMethodException e) {
                     Logger.error("Failed to get signature of Java method: " + ExceptionUtils.getStackTrace(e));
@@ -314,13 +318,13 @@ public class ClassListener extends FoliageBaseListener {
     @Override
     public void exitMethodCall(FoliageParser.MethodCallContext ctx) {
         Logger.trace("Parsing method call of " + ctx.name.getText());
-        method.statements.add(new MethodCall(null, ctx.name.getText(), "static"));
+        method.statements.add(new MethodCall(null, ctx.name.getText()));
     }
 
     @Override
     public void exitExternalMethodCall(FoliageParser.ExternalMethodCallContext ctx) {
         Logger.trace("Parsing external method call of " + ctx.klass.getText() + "." + ctx.name.getText());
-        method.statements.add(new MethodCall(ctx.klass.getText(), ctx.name.getText(), "static"));
+        method.statements.add(new MethodCall(ctx.klass.getText(), ctx.name.getText()));
     }
 
     @Override
