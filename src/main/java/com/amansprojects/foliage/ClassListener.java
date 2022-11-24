@@ -26,13 +26,19 @@ public class ClassListener extends FoliageBaseListener {
 		cw.visit(Opcodes.V17, Opcodes.ACC_PUBLIC, className, null, "java/lang/Object", null);
 	}
 
-    private static int stringToType(String type) {
-        int t = Type.VOID;
+    private static Type stringToType(String type) {
+        Type t = Type.VOID_TYPE;
         switch (type) {
-            case "void" -> t = Type.VOID;
-            case "int" -> t = Type.INT;
-            case "float" -> t = Type.FLOAT;
-            default -> t = Type.OBJECT;
+            case "void" -> t = Type.VOID_TYPE;
+            case "int" -> t = Type.INT_TYPE;
+            case "float" -> t = Type.FLOAT_TYPE;
+            default -> {
+                try {
+                    t = Type.getType(Class.forName(type));
+                } catch (ClassNotFoundException e) {
+                    Logger.error("Failed to get type: " + ExceptionUtils.getStackTrace(e));
+                }
+            }
         }
         return t;
     }
@@ -115,10 +121,10 @@ public class ClassListener extends FoliageBaseListener {
 
     class ValueDeclaration implements Statement {
         final String name;
-        final int type;
+        final Type type;
         final String value;
 
-        public ValueDeclaration(String name, int type, String value) {
+        public ValueDeclaration(String name, Type type, String value) {
             this.name = name;
             this.type = type;
             this.value = value;
@@ -126,15 +132,13 @@ public class ClassListener extends FoliageBaseListener {
 
         public void invoke(MethodVisitor v) {
             Logger.trace("Compiling value-based local variable declaration " + name);
-            switch (type) {
-                case Type.INT -> {
-                    v.visitLdcInsn(Integer.parseInt(value));
-                    v.visitVarInsn(Opcodes.ISTORE, method.vars.size());
-                }
-                case Type.FLOAT -> {
-                    v.visitLdcInsn(Float.parseFloat(value));
-                    v.visitVarInsn(Opcodes.FSTORE, method.vars.size());
-                }
+            if (type.equals(Type.INT_TYPE)) {
+                v.visitLdcInsn(Integer.parseInt(value));
+                v.visitVarInsn(Opcodes.ISTORE, method.vars.size());
+            }
+            else if (type.equals(Type.FLOAT)) {
+                v.visitLdcInsn(Float.parseFloat(value));
+                v.visitVarInsn(Opcodes.FSTORE, method.vars.size());
             }
             method.vars.add(name);
             method.varTypes.put(name, type);
@@ -143,20 +147,20 @@ public class ClassListener extends FoliageBaseListener {
 
     class StackDeclaration implements Statement {
         final String name;
-        final int type;
+        final Type type;
 
-        public StackDeclaration(String name, int type) {
+        public StackDeclaration(String name, Type type) {
             this.name = name;
             this.type = type;
         }
 
         public void invoke(MethodVisitor v) {
             Logger.trace("Compiling stack-based local variable declaration " + name);
-            switch (type) {
-                case Type.INT -> v.visitVarInsn(Opcodes.ISTORE, method.vars.size());
-                case Type.FLOAT -> v.visitVarInsn(Opcodes.FSTORE, method.vars.size());
-                case Type.OBJECT -> v.visitVarInsn(Opcodes.ASTORE, method.vars.size());
-            }
+
+            if (type.equals(Type.INT_TYPE)) v.visitVarInsn(Opcodes.ISTORE, method.vars.size());
+            else if (type.equals(Type.FLOAT_TYPE)) v.visitVarInsn(Opcodes.FSTORE, method.vars.size());
+            else v.visitVarInsn(Opcodes.ASTORE, method.vars.size());
+
             method.vars.add(name);
             method.varTypes.put(name, type);
         }
@@ -233,11 +237,11 @@ public class ClassListener extends FoliageBaseListener {
         Statement st;
 
         String returnValue = "";
-        int returnType;
+        Type returnType;
         String signature;
 
         List<String> vars = new ArrayList<>();
-        HashMap<String, Integer> varTypes = new HashMap<>();
+        HashMap<String, Type> varTypes = new HashMap<>();
     }
 
     private Method method;
@@ -335,33 +339,27 @@ public class ClassListener extends FoliageBaseListener {
         Logger.trace("Compiling method " + ctx.name.getText());
         method.returnType = stringToType(ctx.type.getText());
         StringBuilder sb = new StringBuilder("()");
-        switch (method.returnType) {
-            case Type.VOID -> sb.append("V");
-            case Type.INT -> sb.append("I");
-            case Type.FLOAT -> sb.append("F");
-        }
+        if (method.returnType.equals(Type.VOID_TYPE)) sb.append("V");
+        else if (method.returnType.equals(Type.INT_TYPE)) sb.append("I");
+        else if (method.returnType.equals(Type.FLOAT_TYPE)) sb.append("F");
         method.signature = sb.toString();
         MethodVisitor v = cw.visitMethod(Opcodes.ACC_PUBLIC + Opcodes.ACC_STATIC, ctx.name.getText(), method.signature, null, null);
         for (Statement st : method.statements) {
             st.invoke(v);
         }
         if (method.returnValue.isEmpty()) {
-            switch (method.returnType) {
-                case Type.VOID -> v.visitInsn(Opcodes.RETURN);
-                case Type.INT -> v.visitInsn(Opcodes.IRETURN);
-                case Type.FLOAT -> v.visitInsn(Opcodes.FRETURN);
-            }
+            if (method.returnType.equals(Type.VOID_TYPE)) v.visitInsn(Opcodes.RETURN);
+            else if (method.returnType.equals(Type.INT_TYPE)) v.visitInsn(Opcodes.IRETURN);
+            else if (method.returnType.equals(Type.FLOAT_TYPE)) v.visitInsn(Opcodes.FRETURN);
         } else {
-            switch (method.returnType) {
-                case Type.VOID -> v.visitInsn(Opcodes.RETURN);
-                case Type.INT -> {
-                    v.visitLdcInsn(Integer.parseInt(method.returnValue));
-                    v.visitInsn(Opcodes.IRETURN);
-                }
-                case Type.FLOAT -> {
-                    v.visitLdcInsn(Float.parseFloat(method.returnValue));
-                    v.visitInsn(Opcodes.FRETURN);
-                }
+            if (method.returnType.equals(Type.VOID_TYPE)) v.visitInsn(Opcodes.RETURN);
+            else if (method.returnType.equals(Type.INT_TYPE)) {
+                v.visitLdcInsn(Integer.parseInt(method.returnValue));
+                v.visitInsn(Opcodes.IRETURN);
+            }
+            else if (method.returnType.equals(Type.FLOAT_TYPE)) {
+                v.visitLdcInsn(Float.parseFloat(method.returnValue));
+                v.visitInsn(Opcodes.FRETURN);
             }
         }
 
