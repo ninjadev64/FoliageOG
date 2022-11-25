@@ -7,7 +7,9 @@ import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 
+import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -18,7 +20,7 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 
 public class ClassListener extends FoliageBaseListener {
 	private final ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
-    public final String className = "GeneratedClass";
+    public final String className = "com/amansprojects/foliage/generated/GeneratedClass";
 	public HashMap<String, Method> methods = new HashMap<>();
 	
 	public ClassListener() {
@@ -45,12 +47,12 @@ public class ClassListener extends FoliageBaseListener {
     }
 
     private static Object valueContextToObject(FoliageParser.ValueContext ctx) {
-        if (ctx.integer() instanceof FoliageParser.IntegerContext i) {
-            return Integer.parseInt(i.getText());
-        } else if (ctx.float_() instanceof FoliageParser.FloatContext f) {
-            return Float.parseFloat(f.getText());
-        } else if (ctx.string() instanceof FoliageParser.StringContext s) {
-            return s.getText().replaceAll("^\"|\"$", "");
+        if (ctx.integer() != null) {
+            return Integer.parseInt(ctx.integer().getText());
+        } else if (ctx.float_() != null) {
+            return Float.parseFloat(ctx.float_().getText());
+        } else if (ctx.string() != null) {
+            return ctx.string().getText().replaceAll("^\"|\"$", "");
         } else {
             return null;
         }
@@ -237,8 +239,8 @@ public class ClassListener extends FoliageBaseListener {
                 v.visitInsn(Opcodes.DUP);
                 v.visitLdcInsn(o);
                 try {
-                    v.visitMethodInsn(Opcodes.INVOKESPECIAL, Type.getInternalName(
-                        o.getClass()), "<init>",
+                    v.visitMethodInsn(
+                        Opcodes.INVOKESPECIAL, Type.getInternalName(o.getClass()), "<init>",
                         Type.getConstructorDescriptor(o.getClass().getConstructor(fullTypeToPrimitive(o.getClass()))), false
                     );
                 } catch (NoSuchMethodException e) {
@@ -409,10 +411,14 @@ public class ClassListener extends FoliageBaseListener {
 	@Override
 	public void exitProgram(FoliageParser.ProgramContext ctx) {
 		cw.visitEnd();
-		
-		try (FileOutputStream stream = new FileOutputStream("target/classes/" + className + ".class")) {
+
+		try {
+            File f = new File("target/classes/" + className + ".class");
+            boolean r = f.getParentFile().mkdirs();
+            FileOutputStream stream = new FileOutputStream(f);
             stream.write(cw.toByteArray());
-        } catch (Exception e) {
+            stream.close();
+        } catch (IOException e) {
             Logger.error("Failed to write class to file: " + ExceptionUtils.getStackTrace(e));
         }
 	}
