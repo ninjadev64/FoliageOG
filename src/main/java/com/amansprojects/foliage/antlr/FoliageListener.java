@@ -187,4 +187,14 @@ public interface FoliageListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitPushesToStack(FoliageParser.PushesToStackContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link FoliageParser#argumentSet}.
+	 * @param ctx the parse tree
+	 */
+	void enterArgumentSet(FoliageParser.ArgumentSetContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link FoliageParser#argumentSet}.
+	 * @param ctx the parse tree
+	 */
+	void exitArgumentSet(FoliageParser.ArgumentSetContext ctx);
 }

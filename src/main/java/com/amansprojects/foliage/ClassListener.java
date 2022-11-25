@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
@@ -41,6 +42,30 @@ public class ClassListener extends FoliageBaseListener {
             }
         }
         return t;
+    }
+
+    private static Object valueContextToObject(FoliageParser.ValueContext ctx) {
+        if (ctx.integer() instanceof FoliageParser.IntegerContext i) {
+            return Integer.parseInt(i.getText());
+        } else if (ctx.float_() instanceof FoliageParser.FloatContext f) {
+            return Float.parseFloat(f.getText());
+        } else if (ctx.string() instanceof FoliageParser.StringContext s) {
+            return s.getText().replaceAll("^\"|\"$", "");
+        } else {
+            return null;
+        }
+    }
+
+    private static Class<?> fullTypeToPrimitive(Class<? extends Object> c) {
+        /**/ if (c == Byte.class) return byte.class;
+        else if (c == Short.class) return short.class;
+        else if (c == Integer.class) return int.class;
+        else if (c == Long.class) return long.class;
+        else if (c == Float.class) return float.class;
+        else if (c == Double.class) return double.class;
+        else if (c == Character.class) return char.class;
+        else if (c == Boolean.class) return boolean.class;
+        else return c;
     }
 
     interface Statement {
@@ -169,25 +194,12 @@ public class ClassListener extends FoliageBaseListener {
     class MethodCall implements Statement {
         public final String owner;
         public final String name;
+        public final List<Object> arguments;
 
-        public MethodCall(String owner, String name) {
+        public MethodCall(String owner, String name, List<Object> arguments) {
             this.owner = owner;
             this.name = name;
-        }
-
-        public static String getSignature(java.lang.reflect.Method m) {
-            String sig;
-        
-            StringBuilder sb = new StringBuilder("(");
-            for (Class<?> c : m.getParameterTypes()) 
-                sb.append((sig=java.lang.reflect.Array.newInstance(c, 0).toString())
-                    .substring(1, sig.indexOf('@')));
-            return sb.append(')')
-                .append(
-                    m.getReturnType()==void.class?"V":
-                    (sig=java.lang.reflect.Array.newInstance(m.getReturnType(), 0).toString()).substring(1, sig.indexOf('@'))
-                )
-                .toString().replace('.', '/');
+            this.arguments = arguments;
         }
 
         public void invoke(MethodVisitor v) {
@@ -204,7 +216,10 @@ public class ClassListener extends FoliageBaseListener {
                 v.visitVarInsn(Opcodes.ALOAD, method.vars.indexOf(owner));
                 clazz = method.varTypes.get(owner).getClassName();
                 try {
-                    signature = Type.getMethodDescriptor(Class.forName(clazz).getMethod(name));
+                    signature = Type.getMethodDescriptor(Class.forName(clazz).getMethod(
+                        name,
+                        arguments.stream().map(a -> a.getClass()).collect(Collectors.toList()).toArray(new Class<?>[0])
+                    ));
                 } catch (ClassNotFoundException | NoSuchMethodException e) {
                     Logger.error("Failed to get signature of Java method: " + ExceptionUtils.getStackTrace(e));
                 }
@@ -212,10 +227,22 @@ public class ClassListener extends FoliageBaseListener {
                 opcode = Opcodes.INVOKESTATIC;
                 clazz = owner;
                 try {
-                    Class<?> klazz = Class.forName(clazz);
-                    signature = getSignature(klazz.getMethod(name));
+                    signature = Type.getMethodDescriptor(Class.forName(clazz).getMethod(name));
                 } catch (ClassNotFoundException | NoSuchMethodException e) {
                     Logger.error("Failed to get signature of Java method: " + ExceptionUtils.getStackTrace(e));
+                }
+            }
+            for (Object o : arguments) {
+                v.visitTypeInsn(Opcodes.NEW, Type.getInternalName(o.getClass()));
+                v.visitInsn(Opcodes.DUP);
+                v.visitLdcInsn(o);
+                try {
+                    v.visitMethodInsn(Opcodes.INVOKESPECIAL, Type.getInternalName(
+                        o.getClass()), "<init>",
+                        Type.getConstructorDescriptor(o.getClass().getConstructor(fullTypeToPrimitive(o.getClass()))), false
+                    );
+                } catch (NoSuchMethodException e) {
+                    Logger.error("Failed to get signature of constructor of value type wrapper: " + ExceptionUtils.getStackTrace(e));
                 }
             }
             v.visitMethodInsn(opcode, clazz, name, signature, false);
@@ -318,13 +345,19 @@ public class ClassListener extends FoliageBaseListener {
     @Override
     public void exitMethodCall(FoliageParser.MethodCallContext ctx) {
         Logger.trace("Parsing method call of " + ctx.name.getText());
-        method.statements.add(new MethodCall(null, ctx.name.getText()));
+        method.statements.add(new MethodCall(
+            null, ctx.name.getText(),
+            ctx.arguments.items.stream().map(v -> valueContextToObject(v)).collect(Collectors.toList())
+        ));
     }
 
     @Override
     public void exitExternalMethodCall(FoliageParser.ExternalMethodCallContext ctx) {
         Logger.trace("Parsing external method call of " + ctx.klass.getText() + "." + ctx.name.getText());
-        method.statements.add(new MethodCall(ctx.klass.getText(), ctx.name.getText()));
+        method.statements.add(new MethodCall(
+            ctx.klass.getText(), ctx.name.getText(),
+            ctx.arguments.items.stream().map(v -> valueContextToObject(v)).collect(Collectors.toList())
+        ));
     }
 
     @Override

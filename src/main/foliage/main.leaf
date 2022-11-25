@@ -6,6 +6,6 @@ float foo {
 
 int bar {
 	Printer printer = new Printer();
-	printer.print();
+	printer.print(5, 9);
 	return 72;
 }

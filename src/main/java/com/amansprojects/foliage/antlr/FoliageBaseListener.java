@@ -228,6 +228,18 @@ public class FoliageBaseListener implements FoliageListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitPushesToStack(FoliageParser.PushesToStackContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterArgumentSet(FoliageParser.ArgumentSetContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitArgumentSet(FoliageParser.ArgumentSetContext ctx) { }
 
 	/**
 	 * {@inheritDoc}

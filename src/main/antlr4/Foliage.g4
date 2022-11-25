@@ -7,9 +7,9 @@ intOperation : ((integer | variable) operator)+ (integer | variable) ;
 floatOperation : ((float | variable) operator)+ (float | variable) ;
 valueDeclaration : type=Id ' '+ name=Id ' '* '=' ' '* val=value ;
 stackDeclaration : type=Id ' '+ name=Id ' '* '=' ' '* pushesToStack ;
-methodCall : name=Id '()' ;
-externalMethodCall : klass=Id '.' name=Id '()' ;
-instantiation : 'new ' klass=Id '()' ;
+methodCall : name=Id arguments=argumentSet ;
+externalMethodCall : klass=Id '.' name=Id arguments=argumentSet ;
+instantiation : 'new ' klass=Id arguments=argumentSet ;                                                               
 return : 'return ' val=value ;
 
 operator : ('+' | '-' | '*' | '/') ;
@@ -19,6 +19,7 @@ variable : Id ;
 string : '"' Id '"' ;
 value : integer | float | string ;
 pushesToStack : intOperation | floatOperation | methodCall | externalMethodCall | instantiation ;
+argumentSet : '(' ' '* (items+=value (' '* ',' ' '* items+=value)*)* ' '* ')' ;
 
 Id : IDEN+ ;
 Number : DIGIT+ ;
