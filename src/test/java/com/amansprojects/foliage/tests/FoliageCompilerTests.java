@@ -5,7 +5,7 @@ import com.amansprojects.foliage.Logger;
 import org.junit.jupiter.api.Test;
 
 import javax.tools.ToolProvider;
-import com.amansprojects.foliage.generated.GeneratedClass;
+// import com.amansprojects.foliage.generated.GeneratedClass;
 
 public class FoliageCompilerTests {
     @Test
@@ -14,7 +14,11 @@ public class FoliageCompilerTests {
         Runtime.getRuntime().exec("mv Printer.class target/classes/");
         Logger.level = Logger.LogLevel.TRACE;
         FoliageCompiler.compile("src/main/foliage/main.leaf");
-        System.out.println(GeneratedClass.foo());
-        System.out.println(GeneratedClass.bar());
+        // System.out.println(GeneratedClass.foo());
+        // System.out.println(GeneratedClass.bar());
+
+        Class<? extends Object> generated = Class.forName("com.amansprojects.foliage.generated.GeneratedClass");
+        System.out.println(generated.getMethod("foo").invoke(null));
+        System.out.println(generated.getMethod("bar").invoke(null));
     }
 }
